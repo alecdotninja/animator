@@ -1,4 +1,4 @@
-animator
+Animator
 ========
 
 A painless soft delete solution
