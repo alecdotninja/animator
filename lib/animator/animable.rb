@@ -54,9 +54,11 @@ module Animator
 
     def reanimate!(options = {}, validation_queue = nil)
       klass = self.class
-      options = { force: false, transactional: true, validate: true }.merge(options)
+      options = { force: false, transactional: true, validate: true, dry: false }.merge(options)
       
       raise(ReanimationError, "#{inspect} is not animable.") unless animable?
+
+      eraminho = @eraminho
 
       transaction do
         if validation_queue
@@ -74,10 +76,10 @@ module Animator
               validation_queue << self if options[:validate]
               @eraminho.delete
             end
-          end
 
-          @eraminho = nil
-          @destroyed = false    
+            @eraminho = nil
+            @destroyed = false   
+          end 
         else
           validation_queue = []
 
@@ -87,6 +89,12 @@ module Animator
             unless animable.valid?(:reanimate)
               raise(ActiveRecord::RecordInvalid.new(animable))
             end
+          end
+
+          if options[:dry]
+            @eraminho = eraminho
+            @destroyed = true
+            raise(ActiveRecord::Rollback) 
           end
         end
       end
