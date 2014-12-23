@@ -1,9 +1,9 @@
 Gem::Specification.new do |s|
   s.name          = 'animator'
-  s.version       = '0.0.3'
+  s.version       = '0.0.4'
   s.platform      = Gem::Platform::RUBY
-  s.summary       = 'Inspired by the elegance of PaperTrail, Animator is a cleanly namespaced ActiveRecord plugin that hooks into the existing model life-cycle allowing you to to restore (Animable#reanimate), query (Animable.inanimate), and inspect (Animable#divine) destroyed objects including associations without the tedium and ugliness of default scopes, monkey-patched methods, and complex callbacks.'
-  s.description   = 'A painless soft delete solution'
+  s.summary       = 'Animator is a cleanly namespaced ActiveRecord plugin that hooks into the existing model life-cycle allowing you to to restore (Animable#reanimate), query (Animable.inanimate), and inspect (Animable#divine) destroyed objects including associations without the tedium and ugliness of default scopes, monkey-patched methods, and complex callbacks.'
+  s.description   = s.summary
   s.homepage      = 'https://github.com/AlecLarsen/animator'
   s.authors       = ['Alec Larsen']
   s.email         = 'aleclarsen42@gmail.com'
