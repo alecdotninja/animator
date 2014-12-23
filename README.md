@@ -15,19 +15,11 @@ Once the gem is installed, run the `animator:install` generator to create the ne
 rails g animator:install
 ```
 
-To selectively enable Animator, delete the initializer in `config/initializers/animator.rb` and include `Animator::Animable` on the desired models manually.
-```ruby
-class Task < ActiveRecord::Base
-  include Animator::Animable
-end
-```
+> **Note:** To selectively enable Animator, delete the initializer in `config/initializers/animator.rb` and include `Animator::Animable` on the desired models manually.
 
 Finally, the database must be migrated to create the `eraminhos` table before Animator will work properly.
 ```console
 rake db:migrate
 ```
 
-_Note:_ In the very unlikely event that `eraminhos` needs to be preserved for use in the application, Animator may be configured to use an alternative table name by editing the migration and appending the following to the initializer.
-```ruby
-Animator::Eraminho.table_name = 'your_alternative_table_name_for_eraminhos'
-```
+> **Note:** In the very unlikely event that `eraminhos` needs to be preserved for use in the application, Animator may be configured to use an alternative table name by editing the migration and appending `Animator::Eraminho.table_name = 'alternative_table_name_for_eraminhos'` to the initializer.
