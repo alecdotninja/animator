@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name          = 'animator'
-  s.version       = '0.0.1'
+  s.version       = '0.0.2'
   s.platform      = Gem::Platform::RUBY
   s.summary       = 'Inspired by the eligance of PaperTrail, Animator is a cleanly namespaced AcitveRecord plugin that hooks into the existing model lifecycle allowing you to to restore (`Animable#reanimate`), query (`Animable.inanimate`), and inspect (`Animable#divine`) destroyed objects--in most cases, including thier respective associations--without the tedium and ungliness of default scopes, monkey-patched methods, and complex callbacks.'
   s.description   = s.summary
