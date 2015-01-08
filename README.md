@@ -28,7 +28,9 @@ rake db:migrate
 
 ### Destroying
 
-Animator works by registering an around_destroy callback, and therefore can only preserve data when the destroy callbacks are run. This means that calls to `ActiveRecord::Base#delete`, `ActiveRecord::Relation#delete_all`, and friends **cannot** be reversed. 
+There's nothing special here. A simple call to `destroy` and friends will suffice.
+
+> **Note:** Animator works by registering an around_destroy callback, and therefore can only preserve data when the destroy callbacks are run. This means that calls to `delete` and friends **cannot** be reversed. 
 
 ### Querying destroyed objects
 
@@ -36,7 +38,11 @@ Animator works by registering an around_destroy callback, and therefore can only
 
 ### Reanimating
 
-Animable objects (`animable?` is `true`) can be restored with a call to `reanimate` on the instance or `reanimate_all` on a relation. The reanimation callbacks will be triggered. By default, Animator restores relational objects by reversing the transaction in which the object was destroyed. An individual object may be reanimated by passing `transactional: false`. By default, Animator will reverse the entire transaction or leave the database unchanged. To leave objects in a transaction that cannot be reanimated destroyed, pass `force: true`. By default, at the end of reanimation just before the transaction is committed, Animator will run validations on all reanimated objects. To skip validations, pass `validate: false`.
+Animable objects (`animable?` is `true`) can be restored with a call to `reanimate` on the instance, `reanimate_all` on a relation, or `reanimate` and the primary key value on the class. The reanimation callbacks will be triggered on the instance.
+
+Animator restores relational objects by reversing the transaction in which the object was destroyed. An individual object may be reanimated by passing `transactional: false`. Animator will reverse the entire transaction or leave the database unchanged. To leave objects in a transaction that cannot be reanimated destroyed, pass `force: true`. Animator will run validations on all reanimated objects. To skip validations, pass `validate: false`.
+
+> **Note:** Passing `dry: true` will cause the transaction to rollback regardless of success. This is useful for seeing if reanimation is possible.
 
 ### Inspecting destroyed objects
 
@@ -44,4 +50,4 @@ A block of code passed to `divine` on an animable object instance or relation wi
 
 ### Troubleshooting reanimation issues
 
-To be consistent with existing ActiveRecord behavior, plain Animator methods return a reference to the object on which they are called regardless of failure. This means that you must check `destroyed?` on an instance to know if `reanimate` was successful. The `!` versions of the methods will raise informative exceptions upon failure, and in some cases, provide troubleshooting tips.
+To be consistent with existing ActiveRecord behavior, plain Animator methods return a reference to the object on which they are called regardless of failure. This means `destroyed?` on each instance must be checked to know if `reanimate` was successful. The `!` versions of the methods will raise informative exceptions upon failure, and in some cases, provide troubleshooting tips.
