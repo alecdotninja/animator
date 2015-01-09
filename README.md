@@ -1,10 +1,8 @@
 Animator
 ========
-Inspired by the elegance of [PaperTrail](https://github.com/airblade/paper_trail), Animator is a cleanly namespaced ActiveRecord plugin that hooks into the existing model life-cycle allowing you to to restore (`Animable#reanimate`), query (`Animable.inanimate`), and inspect (`Animable#divine`) destroyed objects including associations without the tedium and ugliness of default scopes, monkey-patched methods, and complex callbacks.
+Inspired by the elegance of [PaperTrail](https://github.com/airblade/paper_trail), Animator is a cleanly namespaced ActiveRecord plugin that hooks into the existing model life-cycle allowing the restoration (`Animable#reanimate`), querying (`Animable.inanimate`), and inspection (`Animable#divine`) of destroyed objects including associations without the tedium and ugliness of default scopes, monkey-patched methods, and complex callbacks.
 
 ## Getting Started
-Out of the box, Animator is protects every model in the application. 
-
 Add it to your `Gemfile` and run the `bundle` command.
 ```ruby
 gem 'animator'
@@ -15,7 +13,8 @@ Once the gem is installed, run the `animator:install` generator to create the ne
 rails g animator:install
 ```
 
-> **Note:** To selectively enable Animator, delete the initializer in `config/initializers/animator.rb` and include `Animator::Animable` at the top of the desired models manually.
+> **Note:** Out of the box, Animator protects every model in the application. 
+ To selectively enable Animator, delete the initializer in `config/initializers/animator.rb` and include `Animator::Animable` at the top of the desired models manually.
 
 Finally, the database must be migrated to create the `eraminhos` table before Animator will work properly.
 ```console
@@ -28,13 +27,13 @@ rake db:migrate
 
 ### Destroying
 
-There's nothing special here. A simple call to `destroy` and friends will suffice.
+There's nothing special here. A simple call to `destroy` and friends will suffice. Animator infers dependent assocations by recording the transaction in which an object is destroyed.
 
 > **Note:** Animator works by registering an around_destroy callback, and therefore can only preserve data when the destroy callbacks are run. This means that calls to `delete` and friends **cannot** be reversed. 
 
-### Querying destroyed objects
+### Querying
 
-`Animator::Animable` adds a scope called `inanimate` that can be used with existing scopes and `ActiveRecord::Relation`  methods to query and filter destroyed objects. Objects retrieved in this way will remain in the destroyed state (`destroyed?` is `true`) until they are reanimated.
+`Animator::Animable` adds a scope called `inanimate` that can be used with existing scopes and `ActiveRecord::Relation` methods to query and filter destroyed objects. Objects retrieved in this way will remain in the destroyed state (`destroyed?` is `true`) until they are reanimated.
 
 ### Reanimating
 
@@ -44,10 +43,10 @@ Animator restores relational objects by reversing the transaction in which the o
 
 > **Note:** Passing `dry: true` will cause the transaction to rollback regardless of success. This is useful for seeing if reanimation is possible.
 
-### Inspecting destroyed objects
+### Inspecting
 
 A block of code passed to `divine` on an animable object instance or relation will be executed within an automatically reversed transaction on the restored instance or relation. `divine` has the same defaults and accepts the same options as `reanimate` except validations will not be run by default.
 
-### Troubleshooting reanimation issues
+### Troubleshooting
 
 To be consistent with existing ActiveRecord behavior, plain Animator methods return a reference to the object on which they are called regardless of failure. This means `destroyed?` on each instance must be checked to know if `reanimate` was successful. The `!` versions of the methods will raise informative exceptions upon failure, and in some cases, provide troubleshooting tips.
