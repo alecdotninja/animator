@@ -1,5 +1,5 @@
 module Animator
-  class FeyRelation
+  class AlmostARelation
     attr_reader :transaction_uuid
     attr_reader :where_values_hash
     attr_reader :klass
@@ -146,7 +146,7 @@ module Animator
 
     def ==(other)
       case other
-      when FeyRelation
+      when self.class
         eraminho_relation.to_sql == other.eraminho_relation.to_sql
       when Array
         to_a == other

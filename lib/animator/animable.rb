@@ -26,7 +26,7 @@ module Animator
       end
 
       def inanimate(transaction_uuid = nil, relation = all)
-        FeyRelation.new(relation.klass, transaction_uuid).merge(relation)
+        AlmostARelation.new(relation.klass, transaction_uuid).merge(relation)
       end
     end
 
