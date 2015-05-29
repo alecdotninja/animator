@@ -113,9 +113,7 @@ module Animator
     included do
       define_callbacks :reanimate
       
-      around_destroy do |animable, &block| 
-        block.call
-
+      before_destroy do |animable| 
         unless animable?
           @eraminho = Eraminho.create!(animable: animable)
         end
