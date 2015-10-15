@@ -2,120 +2,91 @@ module Animator
   module Animable
     extend ActiveSupport::Concern
 
-    module ClassMethods
-      def reanimate!(id, options = {})
-        Eraminho.find_by!(animable_class: name, animable_id: id).animable!.reanimate!(options)
-      end
-
-      def reanimate(id, options = {})
-        reanimate!(id, options) rescue nil
-      end
-
-      def divine(id, options = {}, &block)
-        options = { validate: false }.merge(options)
-
-        result = nil
-
-        transaction do
-          instance = reanimate!(id, options)
-          result = instance.instance_exec(&block)
-          raise ActiveRecord::Rollback
-        end
-
-        result
-      end
-
-      def inanimate(transaction_uuid = nil, relation = all)
-        AlmostARelation.new(relation.klass, transaction_uuid).merge(relation)
+    class_methods do
+      def inanimate
+        Eraminho.inanimate_for(self)
       end
     end
 
-    def divine(options = {}, &block)
-      options = { validate: false }.merge(options)
+    def eraminho
+      eraminho! rescue nil
+    end
 
-      result = nil
-      eraminho = @eraminho
-      destroyed = @destroyed
+    def eraminho!
+      @eraminho ||= Eraminho.find_by!(id: eraminho_id) if eraminho_id
+    end
 
-      transaction do
-        reanimate!(options)
-        result = instance_exec(&block)
-        raise ActiveRecord::Rollback
-      end
-
-      @eraminho = eraminho
-      @destroyed = destroyed
-      result
+    def eraminho_id
+      @eraminho_id
     end
 
     def animable?
-      destroyed? && !@eraminho.nil?
+      destroyed? && !!eraminho.try(:persisted?)
     end
 
-    def reanimate!(options = {}, validation_queue = nil)
-      klass = self.class
-      options = { force: false, transactional: true, validate: true, dry: false }.merge(options)
-      
+    def reanimate!(transactional = true)
       raise(ReanimationError, "#{inspect} is not animable.") unless animable?
 
-      eraminho = @eraminho
+      _destroyed, _eraminho, _eraminho_id = @destroyed, @eraminho, @eraminho_id
 
-      transaction do
-        if validation_queue
+      begin
+        transaction do
           run_callbacks(:reanimate) do
-            if options[:transactional]
-              Eraminho.with_transaction_uuid(@eraminho.transaction_uuid).find_each do |eraminho|
-                if options[:force]
-                  eraminho.animable!.reanimate(options.merge(transactional: false, force: false), validation_queue)
-                else
-                  eraminho.animable!.reanimate!(options.merge(transactional: false, force: false), validation_queue)
+            if transactional
+              base = Eraminho.where.not(id: eraminho_id).with_transaction_uuid(eraminho!.transaction_uuid)
+
+              base.uniq.pluck(:animable_class).each do |animable_class|
+                base.inanimate_for(animable_class.constantize).find_in_batches do |animables|
+                  eraminhos = Eraminho.where(id: animables.map(&:eraminho_id)).to_a
+
+                  animables.each.with_index do |animable, index|
+                    eraminho = eraminhos[index]
+
+                    animable.instance_variable_set(:@eraminho, eraminho)
+                    animable.reanimate! false
+                  end
                 end
               end
-            else
-              klass.unscoped.insert arel_attributes_with_values_for_create attribute_names
-              validation_queue << self if options[:validate]
-              @eraminho.delete
             end
 
-            @eraminho = nil
-            @destroyed = false   
-          end 
-        else
-          validation_queue = []
+            self.class.unscoped.insert arel_attributes_with_values_for_create self.class.column_names
 
-          reanimate!(options, validation_queue)
+            eraminho!.destroy!
 
-          validation_queue.each do |animable| 
-            unless animable.valid?(:reanimate)
-              raise(ActiveRecord::RecordInvalid.new(animable))
-            end
-          end
-
-          if options[:dry]
-            @eraminho = eraminho
-            @destroyed = true
-            raise(ActiveRecord::Rollback) 
+            @destroyed, @eraminho, @eraminho_id = false, nil, nil
           end
         end
+      rescue Exception
+        @destroyed, @eraminho, @eraminho_id = _destroyed, _eraminho, _eraminho_id
+
+        raise
       end
 
       self
     end
 
-    def reanimate(options = {}, validation_queue = nil)
-      reanimate!(options, validation_queue) rescue self
+    def reanimate(transactional = true)
+      reanimate!(transactional) rescue self
     end
 
-    def eraminho
-      @eraminho
+    def anima_attributes
+      attributes.merge(changed_attributes)
     end
+
+    private
 
     included do
       define_callbacks :reanimate
-      
-      before_destroy do |animable| 
-        unless animable?
-          @eraminho = Eraminho.create!(animable: animable)
+
+      after_initialize do
+        @eraminho_id = read_attribute(:eraminho_id)
+        @destroyed = true if @eraminho_id
+      end
+
+      after_destroy do
+        unless self.is_a?(Eraminho)
+          @eraminho = Eraminho.create!(animable: self)
+          @eraminho_id = @eraminho.id
         end
       end
     end

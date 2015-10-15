@@ -1,24 +1,21 @@
-require 'securerandom'
-require 'yaml'
-
 module Animator
   class Eraminho < ActiveRecord::Base
     scope :with_animable_id, ->(animable_id) { where(animable_id: animable_id) }
     scope :with_animable_class, ->(animable_class) { where(animable_class: animable_class) }
-    
-    scope :with_animable_attribute, ->(attribute_name, value) { where(arel_table[:anima].matches("% #{YAML.dump(attribute_name.to_s => value).gsub(/^---\n/, '')}%")) }
-    scope :with_animable_attributes, ->(attributes) { attributes.to_a.reduce(all) { |relation, key_value_pair| relation.with_animable_attribute(*key_value_pair) } }
-    
     scope :with_transaction_uuid, ->(transaction_uuid) { where(transaction_uuid: transaction_uuid) }
+
+    def self.inanimate_for(klass)
+      klass.from("(#{with_animable_class(klass.base_class.name).select((["\"eraminhos\".\"id\" AS \"eraminho_id\""] + klass.columns.map { |column| "(\"eraminhos\".\"anima\"::json->>'#{column.name}')::#{column.sql_type} AS \"#{column.name}\"" }).join(', ')).to_sql}) AS \"#{klass.table_name}\"")
+    end
 
     def animable=(animable)
       if animable
         raise(TypeError, "Attempted to set #{animable.inspect} as the animable of an Eraminho, but #{animable.class.name} has not included Animator::Animable") unless animable.is_a?(Animable)
 
-        self.animable_class = animable.class.name
+        self.animable_class = animable.class.base_class.name
         self.animable_id = animable[animable.class.primary_key] if animable.class.primary_key
-        self.transaction_uuid = get_current_transaction_uuid(animable.class.connection)
-        self.anima = YAML.dump(animable)
+        self.transaction_uuid = Animator.current_transaction_uuid
+        self.anima = ActiveSupport::JSON.encode animable.anima_attributes
       end
 
       @animable = animable
@@ -29,23 +26,7 @@ module Animator
     end
 
     def animable!
-      unless @animable
-        animable_class.constantize rescue nil # This is required because of ActiveSupport's lazy loading
-        @animable = YAML.load(anima)
-
-        raise(ReanimationError, "#{@animable.class.name} has not included Animator::Animable") unless @animable.is_a?(Animable)
-
-        @animable.instance_variable_set(:@destroyed, true)
-        @animable.instance_variable_set(:@eraminho, self)
-      end
-
-      @animable
-    end
-
-    private
-
-    def get_current_transaction_uuid(connection)
-      connection.current_transaction.instance_eval { @__animator_transaction_uuid__ ||= SecureRandom.uuid }
+      @animable ||= self.class.where(id: id).inanimate_for(animable_class.constantize).first!
     end
   end
 end
