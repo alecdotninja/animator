@@ -1,6 +1,6 @@
 Animator
 ========
-Inspired by the elegance of [PaperTrail](https://github.com/airblade/paper_trail), Animator is a cleanly namespaced ActiveRecord plugin that hooks into the existing model life-cycle allowing the restoration (`Animable#reanimate`), querying (`Animable.inanimate`), and inspection (`Animable#divine`) of destroyed objects including associations without the tedium and ugliness of default scopes, monkey-patched methods, and complex callbacks.
+Inspired by the elegance of [PaperTrail](https://github.com/airblade/paper_trail), Animator is a cleanly namespaced ActiveRecord plugin that hooks into the existing model life-cycle allowing the restoration (`Animable#reanimate`) and querying (`Animable.inanimate`) of destroyed objects including associations without the tedium and ugliness of default scopes, monkey-patched methods, and complex callbacks.
 
 ## Getting Started
 Add it to your `Gemfile` and run the `bundle` command.
@@ -29,7 +29,7 @@ rake db:migrate
 
 There's nothing special here. A simple call to `destroy` and friends will suffice. Animator infers dependent assocations by recording the transaction in which an object is destroyed.
 
-> **Note:** Animator works by registering an around_destroy callback, and therefore can only preserve data when the destroy callbacks are run. This means that calls to `delete` and friends **cannot** be reversed. 
+> **Note:** Animator works by registering an after_destroy callback, and therefore can only preserve data when the destroy callbacks are run. This means that calls to methods like `delete` **cannot** be reversed.
 
 ### Querying
 
@@ -37,15 +37,9 @@ There's nothing special here. A simple call to `destroy` and friends will suffic
 
 ### Reanimating
 
-Animable objects (`animable?` is `true`) can be restored with a call to `reanimate` on the instance, `reanimate_all` on a relation, or `reanimate` and the primary key value on the class. The reanimation callbacks will be triggered on the instance.
+Animable objects (`animable?` is `true`) can be restored with a call to `reanimate` on the instance or `reanimate_all` on a relation. The reanimation callbacks will be triggered on the instance.
 
-Animator restores relational objects by reversing the transaction in which the object was destroyed. An individual object may be reanimated by passing `transactional: false`. Animator will reverse the entire transaction or leave the database unchanged. To leave objects in a transaction that cannot be reanimated destroyed, pass `force: true`. Animator will run validations on all reanimated objects. To skip validations, pass `validate: false`.
-
-> **Note:** Passing `dry: true` will cause the transaction to rollback regardless of success. This is useful for seeing if reanimation is possible.
-
-### Inspecting
-
-A block of code passed to `divine` on an animable object instance or relation will be executed within an automatically reversed transaction on the restored instance or relation. `divine` has the same defaults and accepts the same options as `reanimate` except validations will not be run by default.
+Animator restores relational objects by reversing the transaction in which the object was destroyed. An individual object may be reanimated by passing `false`. Animator will reverse the entire transaction or leave the database unchanged.
 
 ### Troubleshooting
 
