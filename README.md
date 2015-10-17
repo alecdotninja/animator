@@ -41,6 +41,6 @@ Animable objects (`animable?` is `true`) can be restored with a call to `reanima
 
 Animator restores relational objects by reversing the transaction in which the object was destroyed. An individual object may be reanimated by passing `false`. Animator will reverse the entire transaction or leave the database unchanged.
 
-### Troubleshooting
+## Troubleshooting
 
 To be consistent with existing ActiveRecord behavior, plain Animator methods return a reference to the object on which they are called regardless of failure. This means `destroyed?` on each instance must be checked to know if `reanimate` was successful. The `!` versions of the methods will raise informative exceptions upon failure, and in some cases, provide troubleshooting tips.
